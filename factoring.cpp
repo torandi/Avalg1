@@ -3,14 +3,14 @@
 #include <gmp.h>
 #include <gmpxx.h>
 #include <list>
+#include <string>
 
 using namespace std;
 
 #define PRIME_TEST_REPS 10
 
 void init();
-bool factorize(mpz_t num, list<mpz_class> &factors);
-void output_factors(list<mpz_class> &factors);
+bool factorize(mpz_t num);
 void pollard(mpz_t ret, mpz_t N, mpz_t x0);
 void square_plus_one(mpz_t &z);
 
@@ -19,17 +19,12 @@ int main() {
    mpz_init(num);
    init();
 
-   list<mpz_class> factors;
-   
-    while(!cin.eof()) {
+   while(!cin.eof()) {
       cin>>num;
       if(!cin.eof()) {
-         if(factorize(num,factors)) {
-            output_factors(factors);
-         } else {
-            cout<<"fail"<<endl;
+         if(!factorize(num)) {
+            cerr<<"fail"<<endl;
          }
-         factors.clear();
          cout<<endl;
       }
    }
@@ -39,14 +34,13 @@ void init() {
 
 }
 
-void output_factors(list<mpz_class> &factors) {
-   for(list<mpz_class>::const_iterator it=factors.begin();it!=factors.end();++it) {
-      cout<<*it<<endl;
+bool factorize(mpz_t num) {
+   if(mpz_cmp_ui(num,1)==0) {
+      return true;
    }
-}
-
-bool factorize(mpz_t num, list<mpz_class> &factors) {
    int prob_prime = mpz_probab_prime_p(num, PRIME_TEST_REPS);
+   cout<<"factorize("<<num<<")"<<endl;
+   sleep(1);
    if(prob_prime == 0) {
       mpz_t d, tmp, x0;
       mpz_init(d);
@@ -54,15 +48,18 @@ bool factorize(mpz_t num, list<mpz_class> &factors) {
       mpz_init(x0);
       mpz_set_ui(x0, 2);
       pollard(d, num, x0);
-      mpz_div(tmp, num, d);
-      if(factorize(d, factors) && factorize(tmp, factors))
+      mpz_fdiv_q(tmp, num, d);
+      cerr<<"Pollard: "<<d<<", "<<tmp<<endl;
+      if(factorize(d) && factorize(tmp))
          return true;
       else
          return false;
    } else {
       if(prob_prime == 1)
          cerr<<num<<" is probably prime"<<endl;
-      factors.push_back(mpz_class(num));
+      else
+         cerr<<num<<" is definitly prime"<<endl;
+      cout<<num<<endl;
       return true;
    }
 }
@@ -72,12 +69,13 @@ void pollard(mpz_t d, mpz_t N, mpz_t x0) {
    mpz_init(x1);
    mpz_init(x2);
    mpz_init(d);
+   mpz_init(tmp);
 
    mpz_set(x1, x0);
    mpz_set(x2, x0);
    mpz_set_ui(d, 1);
 
-   while(mpz_cmp_ui(d,1)) {
+   while(mpz_cmp_ui(d,1)==0) {
       square_plus_one(x1);
       mpz_mod(x1, x1, N);
 

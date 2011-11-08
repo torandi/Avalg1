@@ -1,5 +1,5 @@
 OBJS = factoring.o
-CFLAGS += -Wall -g 
+CXXFLAGS += -Wall -g 
 LDFLAGS += -lgmp -lgmpxx
 
 all: factoring
@@ -11,7 +11,7 @@ clean:
 	rm -rf *.o *.d factoring
 
 %.o : %.cpp %.h
-	@$(CXX) -MM $(CFLAGS) $< > $*.d
-	$(CXX) $(CFLAGS) -c $< -o $@
+	@$(CXX) -MM $(CXXFLAGS) $< > $*.d
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 -include $(OBJS:.o=.d)
