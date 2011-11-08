@@ -39,25 +39,46 @@ bool factorize(mpz_t num) {
       return true;
    }
    int prob_prime = mpz_probab_prime_p(num, PRIME_TEST_REPS);
-   cout<<"factorize("<<num<<")"<<endl;
-   sleep(1);
+   //sleep(1);
    if(prob_prime == 0) {
+      cerr<<"factorize("<<num<<")"<<endl;
       mpz_t d, tmp, x0;
-      mpz_init(d);
-      mpz_init(tmp);
-      mpz_init(x0);
+      mpz_init(d);mpz_init(tmp); mpz_init(x0);
       mpz_set_ui(x0, 2);
-      if(pollard(d, num, x0)) {
-         mpz_fdiv_q(tmp, num, d);
-         cerr<<"Pollard: "<<d<<", "<<tmp<<endl;
-         if(factorize(d) && factorize(tmp))
-            return true;
-         else
-            return false;
-      } else {
-         cerr<<"Pollard failed!"<<endl;
-         return false;
+      while(mpz_cmp_ui(x0, 5)<0) {
+         if(pollard(d, num, x0)) {
+            mpz_fdiv_q(tmp, num, d);
+            //cerr<<"Pollard: "<<d<<", "<<tmp<<endl;
+            if(factorize(d) && factorize(tmp))
+               return true;
+            else
+               return false;
+         } else {
+            if(mpz_root(d, num, 2)!=0) {
+               if(factorize(d) && factorize(d))
+                  return true;
+               else
+                  return false;
+            } else {
+               mpz_add_ui(x0,x0,1);
+            }
+         }
       }
+      cerr<<"Pollard failed!"<<endl;
+      mpz_t prime, r, q;
+      mpz_init(r); mpz_init(q); mpz_init( prime);
+      while(mpz_cmp(prime, num)<0) {
+         mpz_nextprime(prime, prime);
+         mpz_fdiv_qr(q, r , num, prime); 
+         if(mpz_cmp_ui(r, 0) == 0) {
+            cout<<prime<<endl;
+            if(factorize(q))
+               return true;
+            else
+               return false;
+         }
+      }  
+      return false;
    } else {
       if(prob_prime == 1)
          cerr<<num<<" is probably prime"<<endl;
@@ -70,9 +91,7 @@ bool factorize(mpz_t num) {
 
 bool pollard(mpz_t d, mpz_t N, mpz_t x0) {
    mpz_t x1, x2, tmp;
-   mpz_init(x1);
-   mpz_init(x2);
-   mpz_init(tmp);
+   mpz_init(x1); mpz_init(x2);mpz_init(tmp);
 
    mpz_set(x1, x0);
    mpz_set(x2, x0);
@@ -86,7 +105,7 @@ bool pollard(mpz_t d, mpz_t N, mpz_t x0) {
       square_plus_one(x2);
       mpz_mod(x2, x2, N);
 
-      cout<<"x1: "<<x1<<", x2: "<<x2<<endl;
+      //cout<<"x1: "<<x1<<", x2: "<<x2<<endl;
 
       mpz_sub(tmp, x2, x1);
       mpz_abs(tmp, tmp);
