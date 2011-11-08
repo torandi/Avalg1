@@ -8,11 +8,15 @@
 using namespace std;
 
 #define PRIME_TEST_REPS 10
+#define MAX_ITERATIONS 500 
+#define BIGGEST_PRIME 100000
 
 void init();
 bool factorize(mpz_t num);
 bool pollard(mpz_t ret, mpz_t N, mpz_t x0);
 void square_plus_one(mpz_t &z);
+
+list<string> output_buffer;
 
 int main() {
    mpz_t num;
@@ -22,8 +26,13 @@ int main() {
    while(!cin.eof()) {
       cin>>num;
       if(!cin.eof()) {
-         if(!factorize(num)) {
-            cerr<<"fail"<<endl;
+         output_buffer.clear();
+         if(factorize(num)) {
+            for(list<string>::iterator it=output_buffer.begin();it!=output_buffer.end(); ++it) {
+               cout<<*it<<endl;
+            }
+         } else {
+            cout<<"fail"<<endl;
          }
          cout<<endl;
       }
@@ -32,6 +41,12 @@ int main() {
 
 void init() {
 
+}
+
+void output_num(mpz_t num) {
+   char buffer[512];
+   gmp_snprintf(buffer,512,"%Zd",num);
+   output_buffer.push_back(string(buffer));
 }
 
 bool factorize(mpz_t num) {
@@ -67,11 +82,11 @@ bool factorize(mpz_t num) {
       cerr<<"Pollard failed!"<<endl;
       mpz_t prime, r, q;
       mpz_init(r); mpz_init(q); mpz_init( prime);
-      while(mpz_cmp(prime, num)<0) {
+      while( mpz_cmp_ui(prime, BIGGEST_PRIME) < 0 && mpz_cmp(prime, num)<0)  {
          mpz_nextprime(prime, prime);
          mpz_fdiv_qr(q, r , num, prime); 
          if(mpz_cmp_ui(r, 0) == 0) {
-            cout<<prime<<endl;
+            output_num(prime);
             if(factorize(q))
                return true;
             else
@@ -84,12 +99,13 @@ bool factorize(mpz_t num) {
          cerr<<num<<" is probably prime"<<endl;
       /*else
          cerr<<num<<" is definitly prime"<<endl;*/
-      cout<<num<<endl;
+      output_num(num);
       return true;
    }
 }
 
 bool pollard(mpz_t d, mpz_t N, mpz_t x0) {
+   int iterations=0;
    mpz_t x1, x2, tmp;
    mpz_init(x1); mpz_init(x2);mpz_init(tmp);
 
@@ -97,7 +113,10 @@ bool pollard(mpz_t d, mpz_t N, mpz_t x0) {
    mpz_set(x2, x0);
    mpz_set_ui(d, 1);
 
-   while(mpz_cmp_ui(d,1)==0) {
+   while(mpz_cmp_ui(d,1)==0 ) {
+      if(++iterations > MAX_ITERATIONS) {
+         return false;
+      }
       square_plus_one(x1);
       mpz_mod(x1, x1, N);
 
