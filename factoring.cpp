@@ -10,7 +10,7 @@
 using namespace std;
 
 #define PRIME_TEST_REPS 10
-#define MAX_ITERATIONS 10000 
+#define MAX_ITERATIONS 60000  //40000 gives 2 less points and 5s more time
 #define FIRST_PRIME_STOP 2000
 
 
