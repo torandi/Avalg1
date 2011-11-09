@@ -10,22 +10,26 @@
 using namespace std;
 
 #define PRIME_TEST_REPS 10
-#define MAX_ITERATIONS 60000  //40000 gives 2 less points and 5s more time
+#define MAX_ITERATIONS 100  //40000 gives 2 less points and 5s more time
 #define FIRST_PRIME_STOP 2000
 
 
 void init();
 bool factorize(mpz_t num);
 int factorize_with_primes(mpz_t num,int start, int max);
-bool pollard(mpz_t ret, mpz_t N, mpz_t x0);
+bool pollard(mpz_t ret, mpz_t N);
 void square_plus_one(mpz_t &z);
 
 list<string> output_buffer;
+
+gmp_randstate_t state;
 
 int main() {
    mpz_t num;
    mpz_init(num);
    init();
+
+   gmp_randinit_default(state);
 
    while(!cin.eof()) {
       cin>>num;
@@ -73,26 +77,21 @@ bool factorize(mpz_t num) {
       else if(fwp == 0)
          return false;
 
-      mpz_t d, tmp, x0;
-      mpz_init(d);mpz_init(tmp); mpz_init(x0);
-      mpz_set_ui(x0, 2);
-      while(mpz_cmp_ui(x0, 5)<0) {
-         if(pollard(d, num, x0)) {
-            mpz_fdiv_q(tmp, num, d);
-            cerr<<"Pollard: "<<d<<", "<<tmp<<endl;
-            if(factorize(d) && factorize(tmp))
+      mpz_t d, tmp;
+      mpz_init(d);mpz_init(tmp);// mpz_init(x0);
+      if(pollard(d, num)) {
+         mpz_fdiv_q(tmp, num, d);
+         cerr<<"Pollard: "<<d<<", "<<tmp<<endl;
+         if(factorize(d) && factorize(tmp))
+            return true;
+         else
+            return false;
+      } else {
+         if(mpz_root(d, num, 2)!=0) {
+            if(factorize(d) && factorize(d))
                return true;
             else
                return false;
-         } else {
-            if(mpz_root(d, num, 2)!=0) {
-               if(factorize(d) && factorize(d))
-                  return true;
-               else
-                  return false;
-            } else {
-               mpz_add_ui(x0,x0,1);
-            }
          }
       }
       cerr<<"Pollard failed!"<<endl;
@@ -123,34 +122,77 @@ int factorize_with_primes(mpz_t num,int start, int max) {
    return -1;
 }
 
-bool pollard(mpz_t d, mpz_t N, mpz_t x0) {
+bool pollard(mpz_t g, mpz_t N) {
    int iterations=0;
-   mpz_t x1, x2, tmp;
-   mpz_init(x1); mpz_init(x2);mpz_init(tmp);
+   
+   if(mpz_fdiv_ui(N, 2)==0) {// num % 2
+      mpz_set_ui(g, 2);
+      return true;
+   }
+   mpz_t c, m, k;
+   mpz_t r, q, ys;
+   mpz_t i, x, y;
+   mpz_t tmp1, tmp2;
 
-   mpz_set(x1, x0);
-   mpz_set(x2, x0);
-   mpz_set_ui(d, 1);
+   mpz_init(c); mpz_init(m); mpz_init(k);
+   mpz_init(r); mpz_init(q); mpz_init(ys);
+   mpz_init(i); mpz_init(x); mpz_init(y);
+   mpz_init(tmp1); mpz_init(tmp2);
 
-   while(mpz_cmp_ui(d,1)==0 ) {
+   mpz_urandomm(y, state, N);
+   mpz_urandomm(c, state, N);
+   mpz_urandomm(m, state, N);
+   mpz_set_ui(g, 1);
+   mpz_set_ui(r, 1);
+   mpz_set_ui(q, 1);
+
+   while(mpz_cmp_ui(g,1)==0 ) {
       if(++iterations > MAX_ITERATIONS) {
          return false;
       }
-      square_plus_one(x1);
-      mpz_mod(x1, x1, N);
+      mpz_set(x,y);
+      for(mpz_set_ui(i, 0); mpz_cmp(i, r) < 0; mpz_add_ui(i, i, 1)) {
+         mpz_powm_ui(y, y, 2, N);
+         mpz_add(y, y, c);
+         mpz_mod(y, y,N);
+      }
+      mpz_set_ui(k,0);
+      while(mpz_cmp(k, r) < 0 && mpz_cmp_ui(g, 1) == 0) {
+         mpz_set(ys, y);
+         mpz_sub(tmp1, r, k);
+         if(mpz_cmp(tmp1, m) > 0) // tmp1 = min(tmp1, m)
+            mpz_set(tmp1, m);
+         
+         for(mpz_set_ui(i, 0); mpz_cmp(i, tmp1) < 0; mpz_add_ui(i, i, 1)) {
+            mpz_powm_ui(y, y, 2, N);
+            mpz_add(y, y, c);
+            mpz_mod(y,y,N);
 
-      square_plus_one(x2);
-      square_plus_one(x2);
-      mpz_mod(x2, x2, N);
-
-      //cout<<"x1: "<<x1<<", x2: "<<x2<<endl;
-
-      mpz_sub(tmp, x2, x1);
-      mpz_abs(tmp, tmp);
-
-      mpz_gcd(d, tmp, N);
+            mpz_sub(tmp2, x, y);
+            mpz_abs(tmp2, tmp2);
+            mpz_mul(tmp2, q, tmp2);
+            mpz_mod(q, tmp2, N);
+         }
+         mpz_gcd(g, q, N);
+         mpz_add(k, k, m);
+      }
+      mpz_mul_ui(r, r, 2);
    }
-   return !(mpz_cmp(d,N)==0);
+   if (mpz_cmp(g,N)==0) {
+      while(mpz_cmp_ui(g, 1)>0) {
+         if(++iterations > MAX_ITERATIONS) {
+            return false;
+         }
+         mpz_powm_ui(ys, ys, 2, N);
+         mpz_add(ys, ys, c);
+         mpz_mod(ys, ys,N);
+
+         mpz_sub(tmp2, x, ys);
+         mpz_abs(tmp2, tmp2);
+         mpz_gcd(g, tmp2, N);
+      }
+   }
+   return !(mpz_cmp(g,N)==0);
 }
 
 void square_plus_one(mpz_t &z) {
