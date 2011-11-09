@@ -10,7 +10,7 @@
 using namespace std;
 
 #define PRIME_TEST_REPS 10
-#define MAX_ITERATIONS 500 
+#define MAX_ITERATIONS 10000 
 #define FIRST_PRIME_STOP 2000
 
 
@@ -70,7 +70,7 @@ bool factorize(mpz_t num) {
       int fwp = factorize_with_primes(num, 0, FIRST_PRIME_STOP);
       if( fwp == 1 )
          return true;
-      else if(fwp == -1)
+      else if(fwp == 0)
          return false;
 
       mpz_t d, tmp, x0;
@@ -79,7 +79,7 @@ bool factorize(mpz_t num) {
       while(mpz_cmp_ui(x0, 5)<0) {
          if(pollard(d, num, x0)) {
             mpz_fdiv_q(tmp, num, d);
-            //cerr<<"Pollard: "<<d<<", "<<tmp<<endl;
+            cerr<<"Pollard: "<<d<<", "<<tmp<<endl;
             if(factorize(d) && factorize(tmp))
                return true;
             else

@@ -6,7 +6,7 @@
 using namespace std;
 
 int main() {
-   int num_primes = 5000;
+   int num_primes = 10000;
    cout<<"#ifndef PRIMES_H"<<endl<<"#define PRIMES_H"<<endl;
    cout<<"int num_primes = "<<num_primes<<";"<<endl;
    cout<<"unsigned int primes["<<(num_primes+1)<<"] = {2";

@@ -6,8 +6,11 @@ all: factoring
 
 genprime: genprime.o 
 	$(CXX) genprime.o $(LDFLAGS) -o $@
+	rm primes.h
+	./genprime > primes.h
 
-factoring: $(OBJS)
+
+factoring: $(OBJS) primes.h
 	$(CXX) $(OBJS) $(LDFLAGS) -o $@
 
 clean:
