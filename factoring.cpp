@@ -5,14 +5,18 @@
 #include <list>
 #include <string>
 
+#include "primes.h"
+
 using namespace std;
 
 #define PRIME_TEST_REPS 10
 #define MAX_ITERATIONS 500 
-#define BIGGEST_PRIME 100000
+#define FIRST_PRIME_STOP 2000
+
 
 void init();
 bool factorize(mpz_t num);
+int factorize_with_primes(mpz_t num,int start, int max);
 bool pollard(mpz_t ret, mpz_t N, mpz_t x0);
 void square_plus_one(mpz_t &z);
 
@@ -49,6 +53,12 @@ void output_num(mpz_t num) {
    output_buffer.push_back(string(buffer));
 }
 
+void output_num(unsigned int num) {
+   char buffer[512];
+   sprintf(buffer,"%u",num);
+   output_buffer.push_back(string(buffer));
+}
+
 bool factorize(mpz_t num) {
    if(mpz_cmp_ui(num,1)==0) {
       return true;
@@ -57,6 +67,12 @@ bool factorize(mpz_t num) {
    //sleep(1);
    if(prob_prime == 0) {
       cerr<<"factorize("<<num<<")"<<endl;
+      int fwp = factorize_with_primes(num, 0, FIRST_PRIME_STOP);
+      if( fwp == 1 )
+         return true;
+      else if(fwp == -1)
+         return false;
+
       mpz_t d, tmp, x0;
       mpz_init(d);mpz_init(tmp); mpz_init(x0);
       mpz_set_ui(x0, 2);
@@ -80,28 +96,31 @@ bool factorize(mpz_t num) {
          }
       }
       cerr<<"Pollard failed!"<<endl;
-      mpz_t prime, r, q;
-      mpz_init(r); mpz_init(q); mpz_init( prime);
-      while( mpz_cmp_ui(prime, BIGGEST_PRIME) < 0 && mpz_cmp(prime, num)<0)  {
-         mpz_nextprime(prime, prime);
-         mpz_fdiv_qr(q, r , num, prime); 
-         if(mpz_cmp_ui(r, 0) == 0) {
-            output_num(prime);
-            if(factorize(q))
-               return true;
-            else
-               return false;
-         }
-      }  
-      return false;
+      return factorize_with_primes(num, FIRST_PRIME_STOP,-1)==1;
    } else {
       if(prob_prime == 1)
          cerr<<num<<" is probably prime"<<endl;
-      /*else
-         cerr<<num<<" is definitly prime"<<endl;*/
       output_num(num);
       return true;
    }
+}
+
+int factorize_with_primes(mpz_t num,int start, int max) {
+   mpz_t r, q;
+   mpz_init(r); mpz_init(q);
+   if(max==-1)
+      max = num_primes;
+   for(int i=start;i<max;++i)  {
+      mpz_fdiv_qr_ui(q, r , num, primes[i]); 
+      if(mpz_cmp_ui(r, 0) == 0) {
+         output_num(primes[i]);
+         if(factorize(q))
+            return 1;
+         else
+            return 0;
+      }
+   }
+   return -1;
 }
 
 bool pollard(mpz_t d, mpz_t N, mpz_t x0) {

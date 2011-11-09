@@ -3,7 +3,10 @@ CXXFLAGS += -Wall -g
 LDFLAGS += -lgmp -lgmpxx
 
 all: factoring
- 
+
+genprime: genprime.o 
+	$(CXX) genprime.o $(LDFLAGS) -o $@
+
 factoring: $(OBJS)
 	$(CXX) $(OBJS) $(LDFLAGS) -o $@
 
