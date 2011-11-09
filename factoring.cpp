@@ -10,7 +10,7 @@
 using namespace std;
 
 #define PRIME_TEST_REPS 10
-#define MAX_ITERATIONS 100  //40000 gives 2 less points and 5s more time
+#define MAX_ITERATIONS 200000  //40000 gives 2 less points and 5s more time
 #define FIRST_PRIME_STOP 2000
 
 
@@ -81,24 +81,14 @@ bool factorize(mpz_t num) {
       mpz_init(d);mpz_init(tmp);// mpz_init(x0);
       if(pollard(d, num)) {
          mpz_fdiv_q(tmp, num, d);
-         cerr<<"Pollard: "<<d<<", "<<tmp<<endl;
          if(factorize(d) && factorize(tmp))
             return true;
          else
             return false;
-      } else {
-         if(mpz_root(d, num, 2)!=0) {
-            if(factorize(d) && factorize(d))
-               return true;
-            else
-               return false;
-         }
       }
-      cerr<<"Pollard failed!"<<endl;
+
       return factorize_with_primes(num, FIRST_PRIME_STOP,-1)==1;
    } else {
-      if(prob_prime == 1)
-         cerr<<num<<" is probably prime"<<endl;
       output_num(num);
       return true;
    }
@@ -147,9 +137,6 @@ bool pollard(mpz_t g, mpz_t N) {
    mpz_set_ui(q, 1);
 
    while(mpz_cmp_ui(g,1)==0 ) {
-      if(++iterations > MAX_ITERATIONS) {
-         return false;
-      }
       mpz_set(x,y);
       for(mpz_set_ui(i, 0); mpz_cmp(i, r) < 0; mpz_add_ui(i, i, 1)) {
          mpz_powm_ui(y, y, 2, N);
@@ -164,6 +151,9 @@ bool pollard(mpz_t g, mpz_t N) {
             mpz_set(tmp1, m);
          
          for(mpz_set_ui(i, 0); mpz_cmp(i, tmp1) < 0; mpz_add_ui(i, i, 1)) {
+            if(++iterations > MAX_ITERATIONS) {
+               return false;
+            }
             mpz_powm_ui(y, y, 2, N);
             mpz_add(y, y, c);
             mpz_mod(y,y,N);
